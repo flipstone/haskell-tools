@@ -68,6 +68,6 @@ case $COMMAND in
     docker manifest push $TAG_ROOT
     ;;
   *)
-    echo "usage: ./build-image.sh local|build-arch-tag|push-arch-tag|push-manifest"
+    echo "usage: ./build-image.sh build-arch-tag|push-arch-tag|push-manifest"
     exit 1
 esac;

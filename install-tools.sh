@@ -1,7 +1,7 @@
 set -o errexit
 
 stack install \
-  --local-bin-path /root/.local/bin \
+  --local-bin-path /usr/local/bin \
   weeder \
   fourmolu \
   ghcid \
