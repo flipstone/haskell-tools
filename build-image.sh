@@ -19,7 +19,7 @@ RELEASE_DATE=$(date '+%Y-%m-%d')
 TAG_ROOT="flipstone/haskell-tools:debian-unstable-ghc-9.2.5-$RELEASE_DATE-$COMMIT_SHA"
 ARM_TAG="$TAG_ROOT"-arm64
 AMD_TAG="$TAG_ROOT"-amd64
-ARCH=$(arch)
+ARCH=$(uname -m)
 
 case "$ARCH" in
   x86_64)
