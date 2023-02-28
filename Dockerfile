@@ -1,6 +1,6 @@
 FROM debian:unstable-20230109-slim
 
-RUN apt-get update && apt-get install -y curl build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 zlib1g-dev
+RUN apt-get update && apt-get install -y curl build-essential git-all libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 zlib1g-dev
 
 ADD get-ghcup.sh /get-ghcup.sh
 ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
