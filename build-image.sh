@@ -16,7 +16,7 @@ esac
 
 
 RELEASE_DATE=$(date '+%Y-%m-%d')
-TAG_ROOT="flipstone/haskell-tools:debian-unstable-ghc-9.2.5-$RELEASE_DATE-$COMMIT_SHA"
+TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-unstable-ghc-9.2.5-$RELEASE_DATE-$COMMIT_SHA"
 ARM_TAG="$TAG_ROOT"-arm64
 AMD_TAG="$TAG_ROOT"-amd64
 ARCH=$(uname -m)
@@ -42,7 +42,7 @@ case $COMMAND in
     echo "Building $ARCH_TAG"
     docker build . \
       --tag $ARCH_TAG \
-      --cache-from flipstone/haskell-tools \
+      --cache-from ghcr.io/flipstone/haskell-tools \
       --build-arg 'BUILDKIT_INLINE_CACHE=1'
     ;;
 
@@ -53,8 +53,6 @@ case $COMMAND in
         ;;
       *)
         echo "Pushing $ARCH_TAG for release"
-        echo "Press enter to continue"
-        read
         docker push $ARCH_TAG
         ;;
     esac
@@ -62,8 +60,6 @@ case $COMMAND in
 
   push-manifest)
     echo "Both $AMD_TAG and $ARM_TAG must be pushed to Docker Hub BEFORE running this step."
-    echo "Press enter to continue"
-    read
     docker manifest create $TAG_ROOT --amend $AMD_TAG --amend $ARM_TAG
     docker manifest push $TAG_ROOT
     ;;

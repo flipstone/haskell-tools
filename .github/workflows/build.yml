@@ -1,0 +1,81 @@
+name: Build and push docker image
+
+on:
+  push:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_and_push_x64_image:
+    name: Build x64 docker image
+    runs-on: [self-hosted, linux, x64]
+    permissions:
+      packages: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build x64 image
+        run: |
+          ./build-image.sh build-arch-tag
+          ./build-image.sh push-arch-tag
+
+  build_and_push_arm64_image:
+    name: Build arm64 docker image
+    runs-on: [self-hosted, linux, arm64]
+    permissions:
+      packages: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build arm64 image
+        run: |
+          ./build-image.sh build-arch-tag
+          ./build-image.sh push-arch-tag
+
+  build_and_push_manifest:
+    name: Build manifest docker image
+    runs-on: [self-hosted, linux, x64]
+    needs: [build_and_push_x64_image, build_and_push_arm64_image]
+    permissions:
+      packages: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push manifest
+        run: |
+          ./build-image.sh push-manifest
