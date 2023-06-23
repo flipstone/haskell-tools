@@ -4,7 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       curl build-essential git-all libffi-dev libffi8 libgmp-dev \
-      libgmp10 libncurses-dev libncurses5 libtinfo5 zlib1g-dev
+      libgmp10 libncurses-dev libncurses5 libtinfo5 zlib1g-dev openssh-client
 
 ADD get-ghcup.sh /get-ghcup.sh
 ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
