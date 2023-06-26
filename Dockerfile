@@ -22,3 +22,4 @@ ADD install-tools.sh /install-tools.sh
 ADD stack.yaml /stack.yaml
 RUN /bin/sh /install-tools.sh
 
+RUN mkdir -p ~/.ssh/ && ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
