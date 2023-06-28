@@ -28,6 +28,9 @@ case "$ARCH" in
   aarch64)
     ARCH_TAG="$ARM_TAG"
     ;;
+  arm64)
+    ARCH_TAG="$ARM_TAG"
+    ;;
   *)
     echo "Unrecognized architecture: $ARCH"
     exit 1

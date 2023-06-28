@@ -5,5 +5,6 @@ stack install \
   weeder \
   fourmolu \
   ghcid \
+  hlint \
 
 rm -rf .stack-work /root/.stack
