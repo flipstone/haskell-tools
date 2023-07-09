@@ -28,7 +28,7 @@
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.1.19.2"
+ghver="0.1.19.4"
 : "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes
@@ -851,8 +851,8 @@ case $ask_stack_answer in
 		;;
 	2)
         (_eghcup --cache install stack) || die "Stack installation failed"
-        edo mkdir -p "${STACK_ROOOT:-$HOME/.stack}"/hooks
-        hook_exe="${STACK_ROOOT:-$HOME/.stack}"/hooks/ghc-install.sh
+        edo mkdir -p "${STACK_ROOT:-$HOME/.stack}"/hooks
+        hook_exe="${STACK_ROOT:-$HOME/.stack}"/hooks/ghc-install.sh
         hook_url="https://www.haskell.org/ghcup/sh/hooks/stack/ghc-install.sh"
 
         if [ -e "${hook_exe}" ] ; then

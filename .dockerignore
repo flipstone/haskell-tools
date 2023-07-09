@@ -1,0 +1,5 @@
+README.md
+build-image.sh
+.gitignore
+**/.git
+**/.github

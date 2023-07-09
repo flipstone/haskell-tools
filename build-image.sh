@@ -16,7 +16,7 @@ esac
 
 
 RELEASE_DATE=$(date '+%Y-%m-%d')
-TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-unstable-ghc-9.2.7-$RELEASE_DATE-$COMMIT_SHA"
+TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-unstable-ghc-9.4.5-$RELEASE_DATE-$COMMIT_SHA"
 ARM_TAG="$TAG_ROOT"-arm64
 AMD_TAG="$TAG_ROOT"-amd64
 ARCH=$(uname -m)
@@ -38,33 +38,20 @@ case "$ARCH" in
 esac
 
 COMMAND=$1
-export DOCKER_BUILDKIT=1
 
 case $COMMAND in
-  build-arch-tag)
+  build-and-push-arch-tag)
     echo "Building $ARCH_TAG"
-    docker build . \
+    docker buildx build . \
       --tag $ARCH_TAG \
-      --cache-from ghcr.io/flipstone/haskell-tools \
-      --build-arg 'BUILDKIT_INLINE_CACHE=1'
-    ;;
-
-  push-arch-tag)
-    case "$COMMIT_SHA" in
-      uncommitted)
-        echo "Please commit your changes and build an image tagged with the commit sha before pushing the image for release"
-        ;;
-      *)
-        echo "Pushing $ARCH_TAG for release"
-        docker push $ARCH_TAG
-        ;;
-    esac
+      --cache-from type=gha,mode=max,ignore-error=true \
+      --cache-to type=gha,mode=max,ignore-error=true \
+      --push
     ;;
 
   push-manifest)
-    echo "Both $AMD_TAG and $ARM_TAG must be pushed to Docker Hub BEFORE running this step."
-    docker manifest create $TAG_ROOT --amend $AMD_TAG --amend $ARM_TAG
-    docker manifest push $TAG_ROOT
+    echo "Both $AMD_TAG and $ARM_TAG must be pushed to Github Container Registry BEFORE running this step."
+    docker buildx imagetools create --tag $TAG_ROOT $AMD_TAG $ARM_TAG
     ;;
   *)
     echo "usage: ./build-image.sh build-arch-tag|push-arch-tag|push-manifest"
