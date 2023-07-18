@@ -1,6 +1,11 @@
 system-ghc: true
 install-ghc: false
-resolver: lts-21.2
+resolver: lts-21.3
 packages: []
 extra-deps:
+  - hlint-3.6.1
   - weeder-2.6.0
+  - fourmolu-0.13.1.0
+  - Cabal-syntax-3.10.1.0
+  - ghc-lib-parser-9.6.2.20230523
+  - ghc-lib-parser-ex-9.6.0.0
