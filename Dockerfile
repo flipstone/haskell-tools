@@ -1,4 +1,4 @@
-FROM debian:unstable-20230703-slim
+FROM debian:stable-20230814-slim
 
 ENV LANG="C.UTF-8" LANGUAGE="C.UTF-8" LC_ALL="C.UTF-8"
 
@@ -12,7 +12,7 @@ ADD install-tools.sh /install-tools.sh
 RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git-all libffi-dev libffi8 libgmp-dev \
-        libgmp10 libncurses-dev libncurses5 libtinfo5 zlib1g-dev openssh-client \
+        libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
         procps libnuma-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
