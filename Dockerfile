@@ -1,5 +1,7 @@
 FROM debian:stable-20230814-slim
 
+LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
+
 ENV LANG="C.UTF-8" LANGUAGE="C.UTF-8" LC_ALL="C.UTF-8"
 
 ARG DEBIAN_FRONTEND=noninteractive
