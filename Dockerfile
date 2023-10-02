@@ -1,4 +1,4 @@
-FROM debian:stable-20230814-slim
+FROM debian:stable-20230919-slim
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
