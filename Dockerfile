@@ -15,7 +15,7 @@ RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git-all libffi-dev libffi8 libgmp-dev \
         libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
-        procps libnuma-dev \
+        procps libnuma-dev pkg-config \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -28,7 +28,7 @@ ENV PATH="/usr/local/.ghcup/bin:$PATH"
 
 RUN ghcup install stack 2.13.1 --set
 RUN ghcup install ghc 9.4.7 --set
-RUN ghcup install hls 2.3.0.0 --set
+RUN ghcup install hls 2.4.0.0 --set
 
 ADD stack.yaml /stack.yaml
 RUN /bin/sh /install-tools.sh
