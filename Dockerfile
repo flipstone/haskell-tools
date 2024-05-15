@@ -26,9 +26,10 @@ RUN /bin/sh /get-ghcup.sh
 
 ENV PATH="/usr/local/.ghcup/bin:$PATH"
 
-RUN ghcup install stack 2.13.1 --set
-RUN ghcup install ghc 9.4.7 --set
-RUN ghcup install hls 2.4.0.0 --set
+RUN ghcup config set url-source https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml
+RUN ghcup install stack 2.15.7 --set
+RUN ghcup install ghc 9.6.5 --set
+RUN ghcup install hls 2.8.0.0 --set
 
 ADD stack.yaml /stack.yaml
 RUN /bin/sh /install-tools.sh
