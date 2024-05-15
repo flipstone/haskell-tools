@@ -27,9 +27,18 @@ RUN /bin/sh /get-ghcup.sh
 ENV PATH="/usr/local/.ghcup/bin:$PATH"
 
 RUN ghcup config set url-source https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml
-RUN ghcup install stack 2.15.7 --set
-RUN ghcup install ghc 9.6.5 --set
-RUN ghcup install hls 2.8.0.0 --set
+
+# STACK_VERSION is managed in tool-versions.env
+ARG STACK_VERSION
+RUN ghcup install stack $STACK_VERSION --set
+
+# GHC_VERSION is managed in tool-versions.env
+ARG GHC_VERSION
+RUN ghcup install ghc $GHC_VERSION --set
+
+# HLS_VERSION is managed in tool-versions.env
+ARG HLS_VERSION
+RUN ghcup install hls $HLS_VERSION --set
 
 ADD stack.yaml /stack.yaml
 RUN /bin/sh /install-tools.sh
