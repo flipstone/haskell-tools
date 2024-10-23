@@ -1,6 +1,6 @@
 system-ghc: true
 install-ghc: false
-resolver: lts-22.22
+resolver: lts-22.39
 packages: []
 extra-deps:
-  - weeder-2.8.0
+  - weeder-2.9.0

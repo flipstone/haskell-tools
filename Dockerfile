@@ -1,4 +1,4 @@
-FROM debian:stable-20230814-slim
+FROM debian:stable-20241016-slim
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
@@ -7,7 +7,7 @@ ENV LANG="C.UTF-8" LANGUAGE="C.UTF-8" LC_ALL="C.UTF-8"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BOOTSTRAP_HASKELL_MINIMAL=1
 ARG BOOTSTRAP_HASKELL_NONINTERACTIVE=1
-ARG GHCUP_INSTALL_BASE_PREFIX=/usr/local
+ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
 
 ADD install-tools.sh /install-tools.sh
 
@@ -39,6 +39,10 @@ RUN ghcup install ghc $GHC_VERSION --set
 # HLS_VERSION is managed in tool-versions.env
 ARG HLS_VERSION
 RUN ghcup install hls $HLS_VERSION --set
+
+# CABAL_VERSION is managed in tool-versions.env
+ARG CABAL_VERSION
+RUN ghcup install cabal $CABAL_VERSION --set
 
 ADD stack.yaml /stack.yaml
 RUN /bin/sh /install-tools.sh
