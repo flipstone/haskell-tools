@@ -9,8 +9,6 @@ ARG BOOTSTRAP_HASKELL_MINIMAL=1
 ARG BOOTSTRAP_HASKELL_NONINTERACTIVE=1
 ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
 
-ADD install-tools.sh /install-tools.sh
-
 RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git-all libffi-dev libffi8 libgmp-dev \
@@ -45,4 +43,6 @@ ARG CABAL_VERSION
 RUN ghcup install cabal $CABAL_VERSION --set
 
 ADD stack.yaml /stack.yaml
-RUN /bin/sh /install-tools.sh
+
+ADD install-tools.sh /install-tools.sh
+RUN bash /install-tools.sh
