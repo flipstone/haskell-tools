@@ -45,4 +45,4 @@ RUN ghcup install cabal $CABAL_VERSION --set
 ADD stack.yaml /stack.yaml
 
 ADD install-tools.sh /install-tools.sh
-RUN bash /install-tools.sh
+RUN /bin/sh /install-tools.sh
