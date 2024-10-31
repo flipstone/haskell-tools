@@ -17,5 +17,6 @@ stack install \
   fourmolu \
   ghcid \
   hlint \
+  ShellCheck
 
 rm -rf .stack-work /root/.stack
