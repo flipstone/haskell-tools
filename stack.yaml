@@ -3,4 +3,16 @@ install-ghc: false
 resolver: lts-22.39
 packages: []
 extra-deps:
-  - weeder-2.9.0
+- weeder-2.9.0
+- github: kowainik/stan
+  commit: 386a5efa1ce4ad6c83b083d3d47fcb664abffd36
+# Extra deps for stan
+- ansi-wl-pprint-0.6.9
+- dir-traverse-0.2.3.0
+- extensions-0.1.0.1
+- optparse-applicative-0.17.1.0
+- tomland-1.3.3.3
+- trial-0.0.0.0
+- trial-optparse-applicative-0.0.0.0
+- trial-tomland-0.0.0.0
+- validation-selective-0.2.0.0

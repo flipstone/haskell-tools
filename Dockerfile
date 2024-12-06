@@ -13,7 +13,7 @@ RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git-all libffi-dev libffi8 libgmp-dev \
         libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
-        procps libnuma-dev pkg-config \
+        procps libnuma-dev pkg-config jq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -46,3 +46,5 @@ ADD stack.yaml /stack.yaml
 
 ADD install-tools.sh /install-tools.sh
 RUN /bin/sh /install-tools.sh
+
+ADD run-stan.sh /usr/local/bin/run-stan
