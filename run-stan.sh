@@ -2,7 +2,7 @@
 
 echo "Running stan..."
 
-REPORT=$(stan report --json-output)
+REPORT=$(stan report --json-output "$@")
 EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
