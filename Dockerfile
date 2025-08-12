@@ -1,4 +1,4 @@
-FROM debian:stable-20241016-slim
+FROM debian:trixie-20250721-slim
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
@@ -13,7 +13,7 @@ RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git-all libffi-dev libffi8 libgmp-dev \
         libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
-        procps libnuma-dev pkg-config jq \
+        procps libnuma-dev pkg-config jq wget file \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,8 +23,6 @@ ADD https://get-ghcup.haskell.org /get-ghcup.sh
 RUN /bin/sh /get-ghcup.sh
 
 ENV PATH="/usr/local/.ghcup/bin:$PATH"
-
-RUN ghcup config set url-source https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml
 
 # STACK_VERSION is managed in tool-versions.env
 ARG STACK_VERSION

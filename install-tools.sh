@@ -2,9 +2,9 @@ set -o errexit
 
 arch=$(uname -m)
 if [ "$arch" = x86_64 ]; then
-  curl -Lo /usr/local/bin/ghciwatch "https://github.com/MercuryTechnologies/ghciwatch/releases/download/v1.0.1/ghciwatch-x86_64-linux"
+  curl -Lo /usr/local/bin/ghciwatch "https://github.com/MercuryTechnologies/ghciwatch/releases/download/v1.1.5/ghciwatch-x86_64-linux"
 elif [ "$arch" = aarch64 ]; then
-  curl -Lo /usr/local/bin/ghciwatch "https://github.com/MercuryTechnologies/ghciwatch/releases/download/v1.0.1/ghciwatch-aarch64-linux"
+  curl -Lo /usr/local/bin/ghciwatch "https://github.com/MercuryTechnologies/ghciwatch/releases/download/v1.1.5/ghciwatch-aarch64-linux"
 else
   echo "install-tools.sh: Unknown architecture $arch"
   exit 1
