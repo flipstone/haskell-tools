@@ -1,4 +1,4 @@
-FROM debian:trixie-20250721-slim
+FROM debian:trixie-20250721-slim AS base
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
@@ -24,21 +24,36 @@ RUN /bin/sh /get-ghcup.sh
 
 ENV PATH="/usr/local/.ghcup/bin:$PATH"
 
+FROM base AS build-stack
+
+# The prior release of stack (on ghcup) to the one that we're
+# about to compile. Compiling the latest stack with itself caused
+# a dependency version conflict related to the version of Cabal that
+# was installed.
+RUN ghcup install stack 3.5.1 --set
+
 # STACK_VERSION is managed in tool-versions.env
 ARG STACK_VERSION
-RUN ghcup install stack $STACK_VERSION --set
+RUN git clone https://github.com/flipstone/stack.git && \
+    cd stack && \
+    git checkout $STACK_VERSION && \
+    stack build --copy-bins --local-bin-path /work
+
+FROM base AS final
+
+COPY --from=build-stack /work/stack /usr/local/bin/stack
 
 # GHC_VERSION is managed in tool-versions.env
 ARG GHC_VERSION
 RUN ghcup install ghc $GHC_VERSION --set
 
-# HLS_VERSION is managed in tool-versions.env
-ARG HLS_VERSION
-RUN ghcup install hls $HLS_VERSION --set
-
 # CABAL_VERSION is managed in tool-versions.env
 ARG CABAL_VERSION
 RUN ghcup install cabal $CABAL_VERSION --set
+
+# HLS_VERSION is managed in tool-versions.env
+ARG HLS_VERSION
+RUN ghcup install hls $HLS_VERSION --set
 
 ADD stack.yaml /stack.yaml
 
