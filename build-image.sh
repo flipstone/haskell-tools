@@ -23,7 +23,7 @@ set_tag_and_arch_variables() {
 
 
   RELEASE_DATE=$(date '+%Y-%m-%d')
-  TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-stable-ghc-$GHC_VERSION-$RELEASE_DATE-$COMMIT_SHA"
+  TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-$RELEASE_DATE-$COMMIT_SHA"
   ARM_TAG="$TAG_ROOT"-arm64
   AMD_TAG="$TAG_ROOT"-amd64
   ARCH=$(uname -m)
