@@ -1,0 +1,4 @@
+# Set system-ghc to true globally so that any stack projects using
+# the same LTS as the version of GHC installed in the image get to
+# use the installed GHC.
+system-ghc: true

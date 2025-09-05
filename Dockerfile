@@ -34,14 +34,16 @@ RUN ghcup install stack 3.5.1 --set
 
 # STACK_VERSION is managed in tool-versions.env
 ARG STACK_VERSION
-RUN git clone https://github.com/flipstone/stack.git && \
+ADD https://github.com/flipstone/stack/archive/refs/tags/${STACK_VERSION}.tar.gz /stack.tar.gz
+
+RUN tar --strip-components=1 --one-top-level=stack -x -z -f /stack.tar.gz && \
     cd stack && \
-    git checkout $STACK_VERSION && \
     stack build --copy-bins --local-bin-path /work
 
-FROM base AS final
+FROM base AS build-tools
 
 COPY --from=build-stack /work/stack /usr/local/bin/stack
+ADD container-stack-config.yaml /etc/stack/config.yaml
 
 # GHC_VERSION is managed in tool-versions.env
 ARG GHC_VERSION
@@ -55,9 +57,19 @@ RUN ghcup install cabal $CABAL_VERSION --set
 ARG HLS_VERSION
 RUN ghcup install hls $HLS_VERSION --set
 
+# Run the install-tools step as a separate stage so that
+# build remnants from stack-install don't end up in the
+# final image.
+FROM build-tools AS install-tools
+
 ADD stack.yaml /stack.yaml
 
+# GHCIWATCH_VERSION is managed in tool-versions.env
+ARG GHCIWATCH_VERSION
 ADD install-tools.sh /install-tools.sh
 RUN /bin/sh /install-tools.sh
 
+FROM build-tools AS final
+
+COPY --from=install-tools /install-tools-bins/* /usr/local/bin/.
 ADD run-stan.sh /usr/local/bin/run-stan

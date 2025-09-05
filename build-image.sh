@@ -5,7 +5,7 @@ set -e
 . tool-versions.env
 
 set_build_args() {
-  BUILD_ARGS="--build-arg GHC_VERSION=$GHC_VERSION --build-arg STACK_VERSION=$STACK_VERSION --build-arg HLS_VERSION=$HLS_VERSION --build-arg CABAL_VERSION=$CABAL_VERSION"
+  BUILD_ARGS="--build-arg GHC_VERSION=$GHC_VERSION --build-arg STACK_VERSION=$STACK_VERSION --build-arg HLS_VERSION=$HLS_VERSION --build-arg CABAL_VERSION=$CABAL_VERSION --build-arg GHCIWATCH_VERSION=$GHCIWATCH_VERSION"
 }
 
 set_tag_and_arch_variables() {
@@ -21,9 +21,7 @@ set_tag_and_arch_variables() {
       ;;
   esac
 
-
-  RELEASE_DATE=$(date '+%Y-%m-%d')
-  TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-$RELEASE_DATE-$COMMIT_SHA"
+  TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-$COMMIT_SHA"
   ARM_TAG="$TAG_ROOT"-arm64
   AMD_TAG="$TAG_ROOT"-amd64
   ARCH=$(uname -m)
