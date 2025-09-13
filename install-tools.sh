@@ -14,11 +14,14 @@ fi
 
 chmod +x /install-tools-bins/ghciwatch
 
-stack install \
-  --local-bin-path /install-tools-bins \
-  weeder \
-  fourmolu \
-  ghcid \
-  hlint \
-  ShellCheck \
-  stan
+cabal update
+
+# These are done as separate install commands so that the tools
+# are not forced to use the exact same dependencies, which cabal
+# might not be able to satisfy for all of them at once.
+cabal install --installdir=install-tools-bins weeder-$WEEDER_VERSION
+cabal install --installdir=install-tools-bins fourmolu-$FOURMOLU_VERSION
+cabal install --installdir=install-tools-bins ghcid-$GHCID_VERSION
+cabal install --installdir=install-tools-bins hlint-$HLINT_VERSION
+cabal install --installdir=install-tools-bins ShellCheck-$SHELLCHECK_VERSION
+cabal install --installdir=install-tools-bins stan-$STAN_VERSION

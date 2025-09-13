@@ -62,10 +62,14 @@ RUN ghcup install hls $HLS_VERSION --set
 # final image.
 FROM build-tools AS install-tools
 
-ADD stack.yaml /stack.yaml
-
 # GHCIWATCH_VERSION is managed in tool-versions.env
 ARG GHCIWATCH_VERSION
+ARG WEEDER_VERSION
+ARG FOURMOLU_VERSION
+ARG GHCID_VERSION
+ARG HLINT_VERSION
+ARG SHELLCHECK_VERSION
+ARG STAN_VERSION
 ADD install-tools.sh /install-tools.sh
 RUN /bin/sh /install-tools.sh
 

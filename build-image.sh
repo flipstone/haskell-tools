@@ -5,7 +5,7 @@ set -e
 . tool-versions.env
 
 set_build_args() {
-  BUILD_ARGS="--build-arg GHC_VERSION=$GHC_VERSION --build-arg STACK_VERSION=$STACK_VERSION --build-arg HLS_VERSION=$HLS_VERSION --build-arg CABAL_VERSION=$CABAL_VERSION --build-arg GHCIWATCH_VERSION=$GHCIWATCH_VERSION"
+  BUILD_ARGS="$(sed 's/^/--build-arg /' tool-versions.env)"
 }
 
 set_tag_and_arch_variables() {
