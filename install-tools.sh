@@ -19,6 +19,12 @@ cabal update
 # These are done as separate install commands so that the tools
 # are not forced to use the exact same dependencies, which cabal
 # might not be able to satisfy for all of them at once.
+# We use cabal rather than stack to install these so that they
+# can be versioned separately from the lts we're using --
+# especially if they version we want of a tool cannot compile
+# with our lts. Since these tools are all binary executables
+# copied into the final image they don't need to share all same
+# dependency versions with each other or the lts.
 cabal install --installdir=install-tools-bins weeder-$WEEDER_VERSION
 cabal install --installdir=install-tools-bins fourmolu-$FOURMOLU_VERSION
 cabal install --installdir=install-tools-bins ghcid-$GHCID_VERSION
