@@ -40,27 +40,41 @@ RUN tar --strip-components=1 --one-top-level=stack -x -z -f /stack.tar.gz && \
     cd stack && \
     stack build --copy-bins --local-bin-path /work
 
-FROM base AS build-tools
+FROM base AS with-stack
 
 COPY --from=build-stack /work/stack /usr/local/bin/stack
 ADD container-stack-config.yaml /etc/stack/config.yaml
 
+FROM with-stack AS with-ghc-cabal
+
 # GHC_VERSION is managed in tool-versions.env
 ARG GHC_VERSION
-RUN ghcup install ghc $GHC_VERSION --set
+RUN ghcup install ghc $GHC_VERSION --set && ghcup gc --share-dir --tmpdirs --cache
 
 # CABAL_VERSION is managed in tool-versions.env
 ARG CABAL_VERSION
-RUN ghcup install cabal $CABAL_VERSION --set
+RUN ghcup install cabal $CABAL_VERSION --set && ghcup gc --share-dir --tmpdirs --cache
+
+# Compiling HLS leaves a whole bunch of garbage around in /root/.cache
+# and /root/.local This is purely so that HLS and the install tools can
+# be run in parallel.
+FROM with-ghc-cabal AS with-hls
 
 # HLS_VERSION is managed in tool-versions.env
+# Compling hls ensures that it will be compatible with the version of
+# ghc we have installed. This way we are not dependent on matching the
+# particular compiler versions that HLS has put in their bindist for
+# a particular release. We cache sure to do cleanup as part of the layer
 ARG HLS_VERSION
-RUN ghcup install hls $HLS_VERSION --set
+RUN ghcup compile hls -g $HLS_VERSION --ghc $GHC_VERSION --cabal-update && \
+    ghcup gc --share-dir --tmpdirs && \
+    rm -rf ~/.cache
 
-# Run the install-tools step as a separate stage so that
-# build remnants from stack-install don't end up in the
-# final image.
-FROM build-tools AS install-tools
+# Run the install-tools step as a separate stage so that build remnants
+# from stack-install don't end up in the final image. This does not
+# depend on HLS, so we base this layer on the step before HLS above so
+# that the two layers can be built in parallel.
+FROM with-ghc-cabal AS with-tools
 
 # GHCIWATCH_VERSION is managed in tool-versions.env
 ARG GHCIWATCH_VERSION
@@ -73,7 +87,7 @@ ARG STAN_VERSION
 ADD install-tools.sh /install-tools.sh
 RUN /bin/sh /install-tools.sh
 
-FROM build-tools AS final
+FROM with-hls AS final
 
-COPY --from=install-tools /install-tools-bins/* /usr/local/bin/.
+COPY --from=with-tools /install-tools-bins/* /usr/local/bin/.
 ADD run-stan.sh /usr/local/bin/run-stan
