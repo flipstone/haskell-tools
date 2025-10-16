@@ -66,7 +66,7 @@ FROM with-ghc-cabal AS with-hls
 # particular compiler versions that HLS has put in their bindist for
 # a particular release. We cache sure to do cleanup as part of the layer
 ARG HLS_VERSION
-RUN ghcup compile hls -g $HLS_VERSION --ghc $GHC_VERSION --cabal-update && \
+RUN ghcup compile hls -g $HLS_VERSION --ghc $GHC_VERSION --cabal-update -- --flags="-hlint" && \
     ghcup gc --share-dir --tmpdirs && \
     rm -rf ~/.cache
 
