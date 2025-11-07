@@ -64,7 +64,9 @@ FROM with-ghc-cabal AS with-hls
 # Compling hls ensures that it will be compatible with the version of
 # ghc we have installed. This way we are not dependent on matching the
 # particular compiler versions that HLS has put in their bindist for
-# a particular release. We cache sure to do cleanup as part of the layer
+# a particular release. We make sure to remove the cache as part of
+# building this layer to avoid extra space being taken up in the final
+# image.
 ARG HLS_VERSION
 RUN ghcup compile hls -g $HLS_VERSION --ghc $GHC_VERSION --cabal-update -- --flags="-hlint" && \
     ghcup gc --share-dir --tmpdirs && \
