@@ -1,4 +1,4 @@
-FROM debian:trixie-20250721-slim AS base
+FROM debian:trixie-20251117-slim AS base
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
