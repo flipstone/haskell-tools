@@ -1,7 +1,18 @@
 version: 2
+registries:
+  # The base image registry (Docker Hardened Images) requires auth even for
+  # the free Community tier; Docker Hub credentials work. These reference
+  # Dependabot secrets, which are configured separately from Actions secrets.
+  dhi:
+    type: docker-registry
+    url: dhi.io
+    username: ${{secrets.DOCKERHUB_USERNAME}}
+    password: ${{secrets.DOCKERHUB_TOKEN}}
 updates:
   - package-ecosystem: "docker"
     directory: "/"
+    registries:
+      - dhi
     schedule:
       interval: "monthly"
   - package-ecosystem: "github-actions"

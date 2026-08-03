@@ -1,0 +1,46 @@
+# Tooling containers for this repository, so nothing beyond docker needs to
+# be installed on the host.
+services:
+  # Scan a container image for OS/library vulnerabilities:
+  #   docker compose run --rm trivy image IMAGE_REF
+  trivy:
+    image: aquasec/trivy:0.73.0
+    environment:
+      TRIVY_SEVERITY: ${TRIVY_SEVERITY:-HIGH,CRITICAL}
+      # 0 = report only; set to 1 to fail when vulnerabilities are found.
+      TRIVY_EXIT_CODE: ${TRIVY_EXIT_CODE:-0}
+      # Findings with no released fix are hidden by default so reports only
+      # contain actionable items; set to false to see everything.
+      TRIVY_IGNORE_UNFIXED: ${TRIVY_IGNORE_UNFIXED:-true}
+      TRIVY_CACHE_DIR: /trivy-cache
+      # Registry credentials, passed through only when set on the host.
+      TRIVY_USERNAME:
+      TRIVY_PASSWORD:
+      TRIVY_PLATFORM:
+    volumes:
+      # Persist the vulnerability DB so it is not re-downloaded on every run.
+      - trivy-cache:/trivy-cache
+      # Daemon access so locally-built images can be scanned by name. Set
+      # DOCKER_SOCK if your daemon socket is not at the default location
+      # (e.g. rootless docker: /run/user/1000/docker.sock).
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+
+  # Lint the shell scripts (version kept in step with SHELLCHECK_VERSION in
+  # tool-versions.env):
+  #   docker compose run --rm shellcheck scripts/*.sh image/*.sh
+  shellcheck:
+    image: koalaman/shellcheck:v0.11.0
+    working_dir: /mnt
+    volumes:
+      - .:/mnt:ro
+
+  # Lint the Dockerfile:
+  #   docker compose run --rm hadolint hadolint Dockerfile
+  hadolint:
+    image: hadolint/hadolint:v2.14.0
+    working_dir: /mnt
+    volumes:
+      - .:/mnt:ro
+
+volumes:
+  trivy-cache:

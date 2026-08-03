@@ -8,7 +8,32 @@ defaults:
     shell: bash
 
 jobs:
+  lint:
+    name: Lint scripts and Dockerfile
+    runs-on:
+      group: ci-lite
+      labels: [self-hosted, ci-lite]
+
+    steps:
+      # Authenticated pulls from Docker Hub (the shellcheck and hadolint
+      # images) avoid the anonymous rate limits.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Shellcheck
+        run: docker compose run --rm shellcheck scripts/*.sh image/*.sh
+
+      - name: Hadolint
+        run: docker compose run --rm hadolint hadolint Dockerfile
+
   build_and_push_image:
+    needs: [lint]
     strategy:
       matrix:
         os: [[self-hosted, x64, builder], [self-hosted, linux, arm64]]
@@ -20,6 +45,16 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # The base image comes from Docker Hardened Images, which requires
+      # authentication even for the free Community tier. Docker Hub
+      # credentials work for dhi.io.
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@v4
+        with:
+          registry: dhi.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -36,12 +71,9 @@ jobs:
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Expose GitHub Runtime
-        uses: crazy-max/ghaction-github-runtime@v4
-
       - name: Build And Push Image
         run: |
-          ./build-image.sh build-and-push-arch-tag
+          ./scripts/build-image.sh build-and-push-arch-tag
 
   build_and_push_manifest:
     name: Build manifest docker image
@@ -51,6 +83,14 @@ jobs:
     needs: [build_and_push_image]
 
     steps:
+      # Authenticated pulls from Docker Hub (aquasec/trivy for the scan step,
+      # moby/buildkit for setup-buildx) avoid the anonymous rate limits.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -64,6 +104,41 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Report-only scan of the amd64 image pushed by the build job (the
+      # arm64 image contents match closely enough that scanning it too
+      # adds no signal), using the same compose trivy service developers
+      # run locally. Runs before push-manifest so that setting
+      # TRIVY_EXIT_CODE to '1' here would stop a vulnerable image from
+      # being published under its manifest tag.
+      - name: Scan images with Trivy
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/build-image.sh scan-amd64-tag
+
+      # Surface the scan results on the run page and as a downloadable
+      # artifact, even when the scan step itself fails.
+      - name: Add Trivy results to the job summary
+        if: ${{ always() }}
+        run: |
+          shopt -s nullglob
+          for report in trivy-reports/*.txt; do
+            {
+              echo "## Trivy scan: $(basename "$report" .txt)"
+              echo '```'
+              cat "$report"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Upload Trivy reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: trivy-reports
+          path: trivy-reports/
+
       - name: Build and push manifest
         run: |
-          ./build-image.sh push-manifest
+          ./scripts/build-image.sh push-manifest

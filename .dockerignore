@@ -1,5 +1,10 @@
 README.md
-build-image.sh
+LICENSE
+scripts/
+compose.yaml
+trivy-reports/
+.env
 .gitignore
+.hadolint.yaml
 **/.git
 **/.github

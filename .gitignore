@@ -1,1 +1,3 @@
-ec2-build-machine.env
+.env
+trivy-reports/
+.claude/

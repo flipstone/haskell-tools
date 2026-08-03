@@ -1,26 +1,41 @@
-FROM debian:trixie-20250721-slim AS base
+# Docker Hardened Images debian base (Community tier). The trixie-dev tag is
+# rolling, so it is pinned by digest; dependabot bumps the digest monthly.
+# Pulling requires `docker login dhi.io` (Docker Hub credentials).
+FROM dhi.io/debian-base:trixie-dev@sha256:4440cf16b142316744a7fd1c5070eb23df54c7c335d8684c8d72864f0f3eb30e AS base
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
 ENV LANG="C.UTF-8" LANGUAGE="C.UTF-8" LC_ALL="C.UTF-8"
 
-ARG DEBIAN_FRONTEND=noninteractive
-ARG BOOTSTRAP_HASKELL_MINIMAL=1
-ARG BOOTSTRAP_HASKELL_NONINTERACTIVE=1
 ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
 
+# DEBIAN_FRONTEND=noninteractive is not set here because the DHI base bakes
+# it in as a persistent ENV; restore it if this ever moves off DHI.
+#
+# The trailing ldconfig matters: the DHI base ships without /etc/ld.so.cache
+# and apt does not regenerate it here, so without it tools that probe
+# libraries via `ldconfig -p` (notably stack's GHC bindist selection) see an
+# empty cache and misbehave.
 RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
-        curl build-essential git-all libffi-dev libffi8 libgmp-dev \
+        curl build-essential git libffi-dev libffi8 libgmp-dev \
         libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
         procps libnuma-dev pkg-config jq wget file \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
 
 RUN mkdir -p ~/.ssh/ && ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
 
-ADD https://get-ghcup.haskell.org /get-ghcup.sh
-RUN /bin/sh /get-ghcup.sh
+# GHCUP_VERSION is managed in tool-versions.env. A pinned ghcup binary is
+# fetched directly rather than via the get-ghcup.haskell.org bootstrap
+# script, which changes upstream and would invalidate every layer below
+# this one whenever it does.
+ARG GHCUP_VERSION
+RUN mkdir -p /usr/local/.ghcup/bin \
+    && curl --fail -o /usr/local/.ghcup/bin/ghcup \
+      "https://downloads.haskell.org/~ghcup/${GHCUP_VERSION}/$(uname -m)-linux-ghcup-${GHCUP_VERSION}" \
+    && chmod +x /usr/local/.ghcup/bin/ghcup
 
 ENV PATH="/usr/local/.ghcup/bin:$PATH"
 
@@ -36,24 +51,24 @@ RUN ghcup install stack 3.5.1 --set
 ARG STACK_VERSION
 ADD https://github.com/flipstone/stack/archive/refs/tags/${STACK_VERSION}.tar.gz /stack.tar.gz
 
-RUN tar --strip-components=1 --one-top-level=stack -x -z -f /stack.tar.gz && \
-    cd stack && \
-    stack build --copy-bins --local-bin-path /work
+RUN tar --strip-components=1 --one-top-level=stack -x -z -f /stack.tar.gz
+WORKDIR /stack
+RUN stack build --copy-bins --local-bin-path /work
 
 FROM base AS with-stack
 
 COPY --from=build-stack /work/stack /usr/local/bin/stack
-ADD container-stack-config.yaml /etc/stack/config.yaml
+COPY image/container-stack-config.yaml /etc/stack/config.yaml
 
 FROM with-stack AS with-ghc-cabal
 
 # GHC_VERSION is managed in tool-versions.env
 ARG GHC_VERSION
-RUN ghcup install ghc $GHC_VERSION --set && ghcup gc --share-dir --tmpdirs --cache
+RUN ghcup install ghc "$GHC_VERSION" --set && ghcup gc --share-dir --tmpdirs --cache
 
 # CABAL_VERSION is managed in tool-versions.env
 ARG CABAL_VERSION
-RUN ghcup install cabal $CABAL_VERSION --set && ghcup gc --share-dir --tmpdirs --cache
+RUN ghcup install cabal "$CABAL_VERSION" --set && ghcup gc --share-dir --tmpdirs --cache
 
 # Compiling HLS leaves a whole bunch of garbage around in /root/.cache
 # and /root/.local This is purely so that HLS and the install tools can
@@ -68,28 +83,59 @@ FROM with-ghc-cabal AS with-hls
 # building this layer to avoid extra space being taken up in the final
 # image.
 ARG HLS_VERSION
-RUN ghcup compile hls -g $HLS_VERSION --ghc $GHC_VERSION --cabal-update -- --flags="-hlint" && \
+RUN ghcup compile hls -g "$HLS_VERSION" --ghc "$GHC_VERSION" --cabal-update -- --flags="-hlint" && \
     ghcup gc --share-dir --tmpdirs && \
     rm -rf ~/.cache
 
-# Run the install-tools step as a separate stage so that build remnants
-# from stack-install don't end up in the final image. This does not
-# depend on HLS, so we base this layer on the step before HLS above so
-# that the two layers can be built in parallel.
-FROM with-ghc-cabal AS with-tools
+# Each tool below is built in its own stage (all versions are managed in
+# tool-versions.env) so that bumping one tool's version rebuilds only that
+# tool, and so the builds run in parallel — with each other and with HLS,
+# which none of them depend on. Every stage runs its own `cabal update` so
+# a version bump always resolves against a current package index.
+#
+# We use cabal rather than stack to install these so that they can be
+# versioned separately from the lts we're using -- especially if the
+# version we want of a tool cannot compile with our lts. Since these
+# tools are all binary executables copied into the final image they
+# don't need to share dependency versions with each other or the lts.
 
-# GHCIWATCH_VERSION is managed in tool-versions.env
+FROM base AS tool-ghciwatch
 ARG GHCIWATCH_VERSION
+RUN curl --fail -Lo /ghciwatch \
+      "https://github.com/MercuryTechnologies/ghciwatch/releases/download/v${GHCIWATCH_VERSION}/ghciwatch-$(uname -m)-linux" \
+    && chmod +x /ghciwatch
+
+FROM with-ghc-cabal AS tool-weeder
 ARG WEEDER_VERSION
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "weeder-$WEEDER_VERSION"
+
+FROM with-ghc-cabal AS tool-fourmolu
 ARG FOURMOLU_VERSION
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "fourmolu-$FOURMOLU_VERSION"
+
+FROM with-ghc-cabal AS tool-ghcid
 ARG GHCID_VERSION
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ghcid-$GHCID_VERSION"
+
+FROM with-ghc-cabal AS tool-hlint
 ARG HLINT_VERSION
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "hlint-$HLINT_VERSION"
+
+FROM with-ghc-cabal AS tool-shellcheck
 ARG SHELLCHECK_VERSION
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ShellCheck-$SHELLCHECK_VERSION"
+
+FROM with-ghc-cabal AS tool-stan
 ARG STAN_VERSION
-ADD install-tools.sh /install-tools.sh
-RUN /bin/sh /install-tools.sh
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "stan-$STAN_VERSION"
 
 FROM with-hls AS final
 
-COPY --from=with-tools /install-tools-bins/* /usr/local/bin/.
-ADD run-stan.sh /usr/local/bin/run-stan
+COPY --from=tool-ghciwatch /ghciwatch /usr/local/bin/ghciwatch
+COPY --from=tool-weeder /tool-bin/weeder /usr/local/bin/weeder
+COPY --from=tool-fourmolu /tool-bin/fourmolu /usr/local/bin/fourmolu
+COPY --from=tool-ghcid /tool-bin/ghcid /usr/local/bin/ghcid
+COPY --from=tool-hlint /tool-bin/hlint /usr/local/bin/hlint
+COPY --from=tool-shellcheck /tool-bin/shellcheck /usr/local/bin/shellcheck
+COPY --from=tool-stan /tool-bin/stan /usr/local/bin/stan
+COPY image/run-stan.sh /usr/local/bin/run-stan

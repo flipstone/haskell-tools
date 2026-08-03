@@ -1,0 +1,4 @@
+ignored:
+  # Pinning an exact version of every apt package is impractical against a
+  # moving debian snapshot; the base image tag pin provides reproducibility.
+  - DL3008
