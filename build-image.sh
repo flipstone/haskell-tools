@@ -69,7 +69,17 @@ case $COMMAND in
     echo "Both $AMD_TAG and $ARM_TAG must be pushed to Github Container Registry BEFORE running this step."
     docker buildx imagetools create --tag $TAG_ROOT $AMD_TAG $ARM_TAG
     ;;
+
+  scan-local-beta)
+    ./trivy-scan.sh haskell-tools-beta
+    ;;
+
+  scan-arch-tags)
+    set_tag_and_arch_variables
+    echo "Both $AMD_TAG and $ARM_TAG must be pushed to Github Container Registry BEFORE running this step."
+    ./trivy-scan.sh "$AMD_TAG" "$ARM_TAG"
+    ;;
   *)
-    echo "usage: ./build-image.sh build-local-beta|build-and-push-arch-tag|push-manifest"
+    echo "usage: ./build-image.sh build-local-beta|build-and-push-arch-tag|push-manifest|scan-local-beta|scan-arch-tags"
     exit 1
 esac;

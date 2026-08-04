@@ -51,6 +51,8 @@ jobs:
     needs: [build_and_push_image]
 
     steps:
+      # Authenticated pulls from Docker Hub (aquasec/trivy for the scan step,
+      # moby/buildkit for setup-buildx) avoid the anonymous rate limits.
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
@@ -70,26 +72,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push manifest
-        run: |
-          ./build-image.sh push-manifest
-
-      # The manifest tag matches the one build-image.sh constructs:
-      # ghcr.io/flipstone/haskell-tools:debian-ghc-<GHC_VERSION>-<short-sha>
-      - name: Compute image reference
-        id: ref
-        run: |
-          . tool-versions.env
-          echo "image=ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
-
-      # Report-only scan of the freshly pushed manifest. Change exit-code to '1'
-      # to turn findings into a build failure.
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+      # Report-only scan of both arch images pushed by the build job, using the
+      # same trivy-scan.sh developers run locally. Runs before push-manifest so
+      # that setting TRIVY_EXIT_CODE to '1' here would stop a vulnerable image
+      # from being published under its manifest tag.
+      - name: Scan images with Trivy
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          image-ref: ${{ steps.ref.outputs.image }}
-          severity: 'HIGH,CRITICAL'
-          exit-code: '0'
+        run: |
+          ./build-image.sh scan-arch-tags
+
+      - name: Build and push manifest
+        run: |
+          ./build-image.sh push-manifest
