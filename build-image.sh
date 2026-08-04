@@ -66,8 +66,31 @@ case $COMMAND in
 
   push-manifest)
     set_tag_and_arch_variables
+    MANIFEST_TAGS="--tag $TAG_ROOT"
+
+    # When PUBLISH_VERSION_TAG=true (set by CI for main-branch builds), also
+    # publish a Dependabot-orderable version tag. The build number counts the
+    # commits on the branch, so it increases monotonically on main and re-runs
+    # of the same commit reproduce the same tag.
+    if [ "${PUBLISH_VERSION_TAG:-false}" = "true" ]; then
+      if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+        echo "PUBLISH_VERSION_TAG requires full git history to compute the build number (use fetch-depth: 0)."
+        exit 1
+      fi
+
+      if [ "$COMMIT_SHA" = "uncommitted" ]; then
+        echo "PUBLISH_VERSION_TAG requires a clean working tree."
+        exit 1
+      fi
+
+      BUILD_NUMBER=$(git rev-list --count HEAD)
+      VERSION_TAG="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-build-$BUILD_NUMBER"
+      MANIFEST_TAGS="$MANIFEST_TAGS --tag $VERSION_TAG"
+      echo "Also publishing version tag $VERSION_TAG"
+    fi
+
     echo "Both $AMD_TAG and $ARM_TAG must be pushed to Github Container Registry BEFORE running this step."
-    docker buildx imagetools create --tag $TAG_ROOT $AMD_TAG $ARM_TAG
+    docker buildx imagetools create $MANIFEST_TAGS $AMD_TAG $ARM_TAG
     ;;
 
   scan-local-beta)

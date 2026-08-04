@@ -8,6 +8,36 @@ images to Github Container Registry.
 Update all our repositories that use this image, to the latest, when
 a new image is published. This list can be found in the codex.
 
+# Image tags and versioning
+
+Every build pushes tags of the form
+`debian-ghc-<GHC_VERSION>-<short-sha>` (plus `-amd64`/`-arm64` variants),
+which trace an image back to the commit that built it.
+
+Builds from `main` additionally publish a version tag of the form
+`debian-ghc-<GHC_VERSION>-build-<N>`, where `N` is the number of commits on
+`main` (`git rev-list --count HEAD`) and therefore always increases. This is
+the tag other repositories should pin: Dependabot can order these tags, so it
+can open PRs bumping the image — both for tool updates (a higher `build-<N>`)
+and for GHC upgrades (a higher GHC version).
+
+To have Dependabot bump this image in a consuming repository, pin the
+`-build-` tag there and add `.github/dependabot.yml` with the ecosystem
+matching how the image is referenced:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "docker-compose" # for image: lines in compose.yaml
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker" # only needed for FROM lines in Dockerfiles
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
 # How to build this using docker to test locally
 
 Run `./build-image.sh build-local-beta` to build a local image tagged as
