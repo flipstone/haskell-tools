@@ -69,6 +69,21 @@ docker compose run --rm hadolint hadolint Dockerfile
 
 Hadolint configuration (ignored rules) lives in `.hadolint.yaml`.
 
+# Dependabot
+
+Dependabot bumps the base image digest and the GitHub Actions versions
+monthly. CI runs on Dependabot branches verify that both arch images still
+build (using the registry layer cache) but publish nothing: the image push,
+scan, and manifest steps are skipped.
+
+Workflows triggered by Dependabot read secrets from the separate
+Dependabot secrets store (repo Settings > Secrets and variables >
+Dependabot), so `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` must be
+configured there as well as in Actions secrets — otherwise the Docker Hub
+and dhi.io logins fail on every Dependabot PR. The same two secrets also
+let Dependabot authenticate to dhi.io for base image digest updates (see
+`.github/dependabot.yaml`).
+
 # How to build this for release
 
 Once you push to GitHub (either on a branch or main), the GitHub workflow

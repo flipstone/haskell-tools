@@ -73,6 +73,16 @@ case $COMMAND in
       --push
     ;;
 
+  build-arch-tag)
+    set_build_args
+    set_tag_and_arch_variables
+    echo "Building $ARCH_TAG without pushing (verification only)"
+    docker buildx build . \
+      "${BUILD_ARGS[@]}" \
+      --tag "$ARCH_TAG" \
+      --cache-from type=registry,ref="$CACHE_TAG"
+    ;;
+
   push-manifest)
     set_tag_and_arch_variables
     echo "Both $AMD_TAG and $ARM_TAG must be pushed to GitHub Container Registry BEFORE running this step."
@@ -91,6 +101,6 @@ case $COMMAND in
     docker compose run --rm trivy image "$AMD_TAG" | tee trivy-reports/amd64.txt
     ;;
   *)
-    echo "usage: ./scripts/build-image.sh build-local-beta|build-and-push-arch-tag|push-manifest|scan-local-beta|scan-amd64-tag"
+    echo "usage: ./scripts/build-image.sh build-local-beta|build-arch-tag|build-and-push-arch-tag|push-manifest|scan-local-beta|scan-amd64-tag"
     exit 1
 esac;

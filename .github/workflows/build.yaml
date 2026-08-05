@@ -3,6 +3,16 @@ name: Build and push docker image
 on:
   push:
 
+# packages:write is needed to push images and layer caches to ghcr on
+# regular runs. Dependabot-triggered runs only build (no pushes) and get a
+# read-only GITHUB_TOKEN regardless of what is declared here unless
+# permissions are explicit; declaring them also gives those runs the ghcr
+# read access their cache pulls need. (Dependabot runs read the DOCKERHUB_*
+# secrets from the separate Dependabot secrets store — see README.md.)
+permissions:
+  contents: read
+  packages: write
+
 defaults:
   run:
     shell: bash
@@ -72,11 +82,23 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build And Push Image
+        if: ${{ github.actor != 'dependabot[bot]' }}
         run: |
           ./scripts/build-image.sh build-and-push-arch-tag
 
+      # Dependabot bumps should verify that the image still builds (reusing
+      # the registry layer cache, so actions-only bumps are cheap) without
+      # publishing anything.
+      - name: Build Image without pushing (Dependabot)
+        if: ${{ github.actor == 'dependabot[bot]' }}
+        run: |
+          ./scripts/build-image.sh build-arch-tag
+
   build_and_push_manifest:
     name: Build manifest docker image
+    # Dependabot runs build without pushing, so there are no arch tags to
+    # scan or to assemble into a manifest.
+    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on:
       group: ci-lite
       labels: [self-hosted, ci-lite]
