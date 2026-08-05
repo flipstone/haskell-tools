@@ -16,17 +16,12 @@ set_build_args() {
 }
 
 set_tag_and_arch_variables() {
-  GIT_CHANGES=$(git status --porcelain | wc -l 2>/dev/null)
-
-  case "$GIT_CHANGES" in
-    0)
-      COMMIT_SHA=$(git show-ref --hash=7 --verify HEAD)
-      ;;
-    *)
-      echo "Uncommitted changes found. Images will be tagged with -uncommitted"
-      COMMIT_SHA="uncommitted"
-      ;;
-  esac
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "Uncommitted changes found. Images will be tagged with -uncommitted"
+    COMMIT_SHA="uncommitted"
+  else
+    COMMIT_SHA=$(git show-ref --hash=7 --verify HEAD)
+  fi
 
   TAG_ROOT="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-$COMMIT_SHA"
   ARM_TAG="$TAG_ROOT"-arm64
