@@ -20,10 +20,6 @@ services:
     volumes:
       # Persist the vulnerability DB so it is not re-downloaded on every run.
       - trivy-cache:/trivy-cache
-      # Daemon access so locally-built images can be scanned by name. Set
-      # DOCKER_SOCK if your daemon socket is not at the default location
-      # (e.g. rootless docker: /run/user/1000/docker.sock).
-      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
 
   # Lint the shell scripts (version kept in step with SHELLCHECK_VERSION in
   # tool-versions.env):
