@@ -75,7 +75,7 @@ case $COMMAND in
 
   push-manifest)
     set_tag_and_arch_variables
-    echo "Both $AMD_TAG and $ARM_TAG must be pushed to Github Container Registry BEFORE running this step."
+    echo "Both $AMD_TAG and $ARM_TAG must be pushed to GitHub Container Registry BEFORE running this step."
     docker buildx imagetools create --tag "$TAG_ROOT" "$AMD_TAG" "$ARM_TAG"
     ;;
 
@@ -86,7 +86,7 @@ case $COMMAND in
 
   scan-amd64-tag)
     set_tag_and_arch_variables
-    echo "$AMD_TAG must be pushed to Github Container Registry BEFORE running this step."
+    echo "$AMD_TAG must be pushed to GitHub Container Registry BEFORE running this step."
     mkdir -p trivy-reports
     docker compose run --rm trivy image "$AMD_TAG" | tee trivy-reports/amd64.txt
     ;;

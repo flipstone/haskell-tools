@@ -1,7 +1,7 @@
 # Haskell Tools
 
 This repository has a workflow defined that will build and push amd64 and arm64
-images to Github Container Registry.
+images to GitHub Container Registry.
 
 Repository layout:
 
@@ -71,9 +71,9 @@ Hadolint configuration (ignored rules) lives in `.hadolint.yaml`.
 
 # How to build this for release
 
-Once you push to Github (either on a branch or main), the Github workflow
+Once you push to GitHub (either on a branch or main), the GitHub workflow
 will build a multi-architecture version of the image and publish it to the
-Github Container Registry. From there it can be used as a base for other 
+GitHub Container Registry. From there it can be used as a base for other 
 images or directly in projects that require no further tools to be installed.
 
 # For Flipstone Developers
