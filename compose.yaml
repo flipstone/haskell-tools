@@ -33,7 +33,7 @@ services:
   # Lint the Dockerfile:
   #   docker compose run --rm hadolint hadolint Dockerfile
   hadolint:
-    image: hadolint/hadolint:v2.14.0
+    image: hadolint/hadolint:v2.15.1
     working_dir: /mnt
     volumes:
       - .:/mnt:ro
