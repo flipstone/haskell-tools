@@ -15,6 +15,11 @@ updates:
       - dhi
     schedule:
       interval: "monthly"
+  # The pinned tooling images (trivy, shellcheck, hadolint) in compose.yaml.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "monthly"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
