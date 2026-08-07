@@ -19,8 +19,8 @@ ENV GHCUP_INSTALL_BASE_PREFIX=/usr/local
 RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git libffi-dev libffi8 libgmp-dev \
-        libgmp10 libncurses-dev libncurses6 libtinfo6 zlib1g-dev openssh-client \
-        procps libnuma-dev pkg-config jq wget file \
+        libncurses-dev libncurses6 zlib1g-dev openssh-client \
+        procps libnuma-dev pkg-config jq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig
@@ -82,10 +82,24 @@ FROM with-ghc-cabal AS with-hls
 # a particular release. We make sure to remove the cache as part of
 # building this layer to avoid extra space being taken up in the final
 # image.
+#
+# The hls executable is dynamically linked against the .so libraries in
+# the cabal store it was built from, so that store must ship in the
+# image. XDG_STATE_HOME gives the build a store of its own: the default
+# store (~/.local/state/cabal/store) is also where cabal builds run in
+# downstream containers (as root) resolve already-installed packages,
+# so it must not contain packages whose compile- and link-time
+# artifacts have been pruned. With the store isolated, everything hls
+# does not load at runtime (.a and .hi files) is deleted and the .so
+# libraries are stripped.
 ARG HLS_VERSION
-RUN ghcup compile hls -g "$HLS_VERSION" --ghc "$GHC_VERSION" --cabal-update -- --flags="-hlint" && \
+RUN XDG_STATE_HOME=/usr/local/.ghcup/hls-cabal \
+      ghcup compile hls -g "$HLS_VERSION" --ghc "$GHC_VERSION" --cabal-update -- --flags="-hlint" && \
     ghcup gc --share-dir --tmpdirs && \
-    rm -rf ~/.cache
+    rm -rf ~/.cache && \
+    find /usr/local/.ghcup/hls-cabal/cabal/store \( -name '*.a' -o -name '*.hi' -o -name '*.dyn_hi' \) -delete && \
+    find /usr/local/.ghcup/hls-cabal/cabal/store -name '*.so' -exec strip --strip-unneeded '{}' + && \
+    strip /usr/local/.ghcup/bin/haskell-language-server-*
 
 # Each tool below is built in its own stage (all versions are managed in
 # tool-versions.env) so that bumping one tool's version rebuilds only that
@@ -98,6 +112,10 @@ RUN ghcup compile hls -g "$HLS_VERSION" --ghc "$GHC_VERSION" --cabal-update -- -
 # version we want of a tool cannot compile with our lts. Since these
 # tools are all binary executables copied into the final image they
 # don't need to share dependency versions with each other or the lts.
+#
+# cabal does not strip the executables it installs, and the debug
+# symbols account for roughly a third of each binary, so each stage
+# strips what it built before the final image copies it in.
 
 FROM base AS tool-ghciwatch
 ARG GHCIWATCH_VERSION
@@ -107,27 +125,27 @@ RUN curl --fail -Lo /ghciwatch \
 
 FROM with-ghc-cabal AS tool-weeder
 ARG WEEDER_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "weeder-$WEEDER_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "weeder-$WEEDER_VERSION" && strip /tool-bin/*
 
 FROM with-ghc-cabal AS tool-fourmolu
 ARG FOURMOLU_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "fourmolu-$FOURMOLU_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "fourmolu-$FOURMOLU_VERSION" && strip /tool-bin/*
 
 FROM with-ghc-cabal AS tool-ghcid
 ARG GHCID_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ghcid-$GHCID_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ghcid-$GHCID_VERSION" && strip /tool-bin/*
 
 FROM with-ghc-cabal AS tool-hlint
 ARG HLINT_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "hlint-$HLINT_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "hlint-$HLINT_VERSION" && strip /tool-bin/*
 
 FROM with-ghc-cabal AS tool-shellcheck
 ARG SHELLCHECK_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ShellCheck-$SHELLCHECK_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ShellCheck-$SHELLCHECK_VERSION" && strip /tool-bin/*
 
 FROM with-ghc-cabal AS tool-stan
 ARG STAN_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "stan-$STAN_VERSION"
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "stan-$STAN_VERSION" && strip /tool-bin/*
 
 FROM with-hls AS final
 
