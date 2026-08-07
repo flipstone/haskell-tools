@@ -7,7 +7,7 @@ Repository layout:
 
 - `Dockerfile` and `image/` — the tooling image definition and the files
   copied into it
-- `scripts/` — scripts run on the host (`bootstrap.sh`, `build-image.sh`)
+- `scripts/` — scripts run on the host (`build-image.sh`)
 - `compose.yaml` — containerized dev tooling (trivy, shellcheck, hadolint),
   so nothing needs to be installed on the host
 - `tool-versions.env` — single source of truth for the tool versions baked
@@ -15,12 +15,7 @@ Repository layout:
 
 # Getting started
 
-After cloning, run `./scripts/bootstrap.sh` once. It detects where your
-Docker daemon socket lives (e.g. rootless Docker keeps it under
-`/run/user/...`) and records it as `DOCKER_SOCK` in a local `.env` file,
-which docker compose reads automatically.
-
-Building the image locally also requires a one-time `docker login dhi.io`
+Building the image locally requires a one-time `docker login dhi.io`
 (your Docker Hub credentials work). The base image is Docker Hardened
 Images' `debian-base` (free Community tier), which requires authentication
 to pull. Its tag is rolling, so the Dockerfile pins it by digest and
@@ -38,8 +33,7 @@ Run `./scripts/build-image.sh scan-local-beta` to scan a locally built beta
 image with [Trivy](https://trivy.dev), or `docker compose run --rm trivy image
 IMAGE` to scan any other image reference. Trivy runs from its official Docker
 image via the `trivy` service in `compose.yaml`, so no host install is
-required. Scanning locally built images relies on the `DOCKER_SOCK` value that
-`./scripts/bootstrap.sh` writes to `.env`.
+required.
 
 Scan behaviour is controlled with environment variables, with defaults set in
 `compose.yaml`: `TRIVY_SEVERITY` (default `HIGH,CRITICAL`), `TRIVY_EXIT_CODE`
