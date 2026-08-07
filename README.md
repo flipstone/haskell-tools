@@ -121,7 +121,7 @@ sha-tag test pin rather than merging it.
 # For Flipstone Developers
 
 Repositories that use this image should pin a release tag
-(`debian-ghc-X.Y.Z-build-YYYY.M.D.N`) and carry a `.github/dependabot.yml`
+(`debian-ghc-X.Y.Z-build-YYYY.M.D.N`) and carry a `.github/dependabot.yaml`
 so new releases arrive as bump PRs automatically:
 
 ```yaml
