@@ -113,8 +113,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Full history so the release-tag step can diff against the
+      # before-sha of the push; the repo is small enough for this to be
+      # cheap.
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v4
@@ -164,3 +169,19 @@ jobs:
       - name: Build and push manifest
         run: |
           ./scripts/build-image.sh push-manifest
+
+      # A release tag is what downstream Dependabot configs watch. Mint one
+      # only for main builds that changed the image or how it is built, so
+      # docs/CI-only merges don't open no-op bump PRs in every downstream
+      # repo. An unknown before-sha (force push, newly created branch) errs
+      # on the side of releasing.
+      - name: Publish release tag
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          before='${{ github.event.before }}'
+          if git cat-file -e "$before" 2>/dev/null &&
+             ! git diff --name-only "$before" HEAD | grep -qE '^(Dockerfile|tool-versions\.env|image/|scripts/build-image\.sh)'; then
+            echo "No image-affecting changes since $before; skipping release tag"
+          else
+            ./scripts/build-image.sh push-release-tag
+          fi

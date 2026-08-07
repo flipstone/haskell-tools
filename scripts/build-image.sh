@@ -89,6 +89,32 @@ case $COMMAND in
     docker buildx imagetools create --tag "$TAG_ROOT" "$AMD_TAG" "$ARM_TAG"
     ;;
 
+  push-release-tag)
+    set_tag_and_arch_variables
+    if [ -z "$GITHUB_RUN_NUMBER" ]; then
+      echo "GITHUB_RUN_NUMBER must be set (this command is meant to run in CI)"
+      exit 1
+    fi
+    if [ "$COMMIT_SHA" = "uncommitted" ]; then
+      echo "Refusing to publish a release tag from a dirty tree"
+      exit 1
+    fi
+    # Release tags are what downstream Dependabot configs watch, so the
+    # version must stay within a single dependabot-core tag format class.
+    # A bare run number breaks at 1000 (dependabot-core#11198); leading
+    # with the 4-digit year avoids that for good. Month and day are
+    # unpadded on purpose: Dependabot compares segments numerically.
+    #
+    # The date is the commit's, not today's: a wall-clock date would let a
+    # re-run of an old workflow mint a tag that sorts above newer releases
+    # while pointing at an older image. With the commit date, a re-run
+    # recreates the identical tag.
+    COMMIT_DATE=$(TZ=UTC git show -s --format=%cd --date=format-local:%Y.%-m.%-d HEAD)
+    RELEASE_TAG="ghcr.io/flipstone/haskell-tools:debian-ghc-$GHC_VERSION-build-$COMMIT_DATE.$GITHUB_RUN_NUMBER"
+    echo "Publishing release tag $RELEASE_TAG (re-tag of $TAG_ROOT)"
+    docker buildx imagetools create --tag "$RELEASE_TAG" "$TAG_ROOT"
+    ;;
+
   scan-local-beta)
     mkdir -p trivy-reports
     docker compose run --rm trivy image haskell-tools-beta | tee trivy-reports/haskell-tools-beta.txt
@@ -101,6 +127,6 @@ case $COMMAND in
     docker compose run --rm trivy image "$AMD_TAG" | tee trivy-reports/amd64.txt
     ;;
   *)
-    echo "usage: ./scripts/build-image.sh build-local-beta|build-arch-tag|build-and-push-arch-tag|push-manifest|scan-local-beta|scan-amd64-tag"
+    echo "usage: ./scripts/build-image.sh build-local-beta|build-arch-tag|build-and-push-arch-tag|push-manifest|push-release-tag|scan-local-beta|scan-amd64-tag"
     exit 1
 esac;
