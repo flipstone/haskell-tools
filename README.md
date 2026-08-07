@@ -84,14 +84,63 @@ and dhi.io logins fail on every Dependabot PR. The same two secrets also
 let Dependabot authenticate to dhi.io for base image digest updates (see
 `.github/dependabot.yaml`).
 
-# How to build this for release
+# Image tags and releases
 
 Once you push to GitHub (either on a branch or main), the GitHub workflow
 will build a multi-architecture version of the image and publish it to the
-GitHub Container Registry. From there it can be used as a base for other 
+GitHub Container Registry. From there it can be used as a base for other
 images or directly in projects that require no further tools to be installed.
+
+The registry holds three kinds of tags:
+
+- `debian-ghc-X.Y.Z-<sha7>` — per-commit tags, published for every push on
+  every branch. Use these to try out a not-yet-merged image.
+- `debian-ghc-X.Y.Z-build-YYYY.M.D.N` — release tags, minted automatically
+  from main whenever a push changed the image or how it is built
+  (`Dockerfile`, `tool-versions.env`, `image/`, or
+  `scripts/build-image.sh`). Docs- and CI-only merges don't mint one.
+  These are the tags downstream repositories should pin. The date is the
+  commit date and `N` is the workflow run number; month and day are
+  unpadded (`2026.8.6`, not `2026.08.06`) because Dependabot compares
+  version segments numerically.
+- `buildcache-*` — registry-hosted layer caches, internal to CI; never pin
+  these.
+
+A release tag is a digest-identical re-tag of the same commit's sha
+manifest, created after the Trivy scan (so a blocking scan configuration
+also blocks releases). The tag is derived from the commit date and run
+number, so re-running a main workflow recreates the same tag rather than
+minting a new one.
+
+To try a candidate image downstream before merging: push your haskell-tools
+branch, pin the resulting `debian-ghc-X.Y.Z-<sha7>` tag on a branch of the
+downstream repository, and iterate. Once your change merges here, Dependabot
+opens the release-tag bump PR in each downstream repository — discard the
+sha-tag test pin rather than merging it.
 
 # For Flipstone Developers
 
-Update all our repositories that use this image, to the latest, when
-a new image is published. This list can be found in the codex.
+Repositories that use this image should pin a release tag
+(`debian-ghc-X.Y.Z-build-YYYY.M.D.N`) and carry a `.github/dependabot.yml`
+so new releases arrive as bump PRs automatically:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "docker-compose" # image: lines in compose files
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker" # FROM lines in Dockerfiles
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+Dependabot keeps `tag@sha256:...` pins working too — it updates the tag and
+digest together. It only proposes updates within the currently pinned GHC
+version: the GHC version sits in the part of the tag Dependabot treats as an
+opaque prefix, so a GHC upgrade is a deliberate, one-time manual pin edit in
+each downstream repository, made alongside the code and resolver changes the
+upgrade requires anyway. The list of repositories using this image can be
+found in the codex.
