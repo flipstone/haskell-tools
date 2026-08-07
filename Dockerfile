@@ -113,9 +113,11 @@ RUN XDG_STATE_HOME=/usr/local/.ghcup/hls-cabal \
 # tools are all binary executables copied into the final image they
 # don't need to share dependency versions with each other or the lts.
 #
-# cabal does not strip the executables it installs, and the debug
-# symbols account for roughly a third of each binary, so each stage
-# strips what it built before the final image copies it in.
+# cabal does not strip executables by default, and the debug symbols
+# account for roughly a third of each binary, so every stage passes
+# --enable-executable-stripping. The hls layer above strips explicitly
+# instead because ghcup places its binaries and libraries outside
+# cabal's install step, which is where this flag takes effect.
 
 FROM base AS tool-ghciwatch
 ARG GHCIWATCH_VERSION
@@ -125,27 +127,27 @@ RUN curl --fail -Lo /ghciwatch \
 
 FROM with-ghc-cabal AS tool-weeder
 ARG WEEDER_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "weeder-$WEEDER_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "weeder-$WEEDER_VERSION"
 
 FROM with-ghc-cabal AS tool-fourmolu
 ARG FOURMOLU_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "fourmolu-$FOURMOLU_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "fourmolu-$FOURMOLU_VERSION"
 
 FROM with-ghc-cabal AS tool-ghcid
 ARG GHCID_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ghcid-$GHCID_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "ghcid-$GHCID_VERSION"
 
 FROM with-ghc-cabal AS tool-hlint
 ARG HLINT_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "hlint-$HLINT_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "hlint-$HLINT_VERSION"
 
 FROM with-ghc-cabal AS tool-shellcheck
 ARG SHELLCHECK_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "ShellCheck-$SHELLCHECK_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "ShellCheck-$SHELLCHECK_VERSION"
 
 FROM with-ghc-cabal AS tool-stan
 ARG STAN_VERSION
-RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin "stan-$STAN_VERSION" && strip /tool-bin/*
+RUN cabal update && cabal install --install-method=copy --installdir=/tool-bin --enable-executable-stripping "stan-$STAN_VERSION"
 
 FROM with-hls AS final
 
