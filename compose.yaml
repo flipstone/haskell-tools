@@ -4,7 +4,7 @@ services:
   # Scan a container image for OS/library vulnerabilities:
   #   docker compose run --rm trivy image IMAGE_REF
   trivy:
-    image: aquasec/trivy:0.73.0
+    image: aquasec/trivy:0.74.0
     environment:
       TRIVY_SEVERITY: ${TRIVY_SEVERITY:-HIGH,CRITICAL}
       # 0 = report only; set to 1 to fail when vulnerabilities are found.
