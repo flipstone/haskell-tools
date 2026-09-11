@@ -1,4 +1,14 @@
+# Cooldown: a version has to survive in the wild for a week before a PR opens.
 version: 2
+# The docker and docker-compose entries below join one multi-ecosystem group,
+# so every image bump across the Dockerfiles and compose files arrives as a
+# single monthly PR instead of one per image per directory. The group owns the
+# schedule; each entry keeps its own registries and cooldown, and
+# `patterns: ["*"]` (required in a group) takes every image.
+multi-ecosystem-groups:
+  images:
+    schedule:
+      interval: "monthly"
 registries:
   # The base image registry (Docker Hardened Images) requires auth even for
   # the free Community tier; Docker Hub credentials work. These reference
@@ -13,14 +23,22 @@ updates:
     directory: "/"
     registries:
       - dhi
-    schedule:
-      interval: "monthly"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "images"
+    cooldown:
+      default-days: 7
   # The pinned tooling images (trivy, shellcheck, hadolint) in compose.yaml.
   - package-ecosystem: "docker-compose"
     directory: "/"
-    schedule:
-      interval: "monthly"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "images"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
