@@ -20,7 +20,7 @@ RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
         curl build-essential git libffi-dev libffi8 libgmp-dev \
         libncurses-dev libncurses6 zlib1g-dev openssh-client \
-        procps libnuma-dev pkg-config jq \
+        procps libnuma-dev pkg-config jq mold \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig

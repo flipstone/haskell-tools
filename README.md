@@ -114,6 +114,10 @@ sha-tag test pin rather than merging it.
 
 # For Flipstone Developers
 
+The image includes the [mold](https://github.com/rui314/mold) linker. Projects
+opt in to it by adding `-optl-fuse-ld=mold` to the `"$locals"` entry of
+`ghc-options` in their `stack.yaml`.
+
 Repositories that use this image should pin a release tag
 (`debian-ghc-X.Y.Z-build-YYYY.M.D.N`) and carry a `.github/dependabot.yaml`
 so new releases arrive as bump PRs automatically:
