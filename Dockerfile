@@ -1,7 +1,7 @@
 # Docker Hardened Images debian base (Community tier). The trixie-dev tag is
 # rolling, so it is pinned by digest; dependabot bumps the digest monthly.
 # Pulling requires `docker login dhi.io` (Docker Hub credentials).
-FROM dhi.io/debian-base:trixie-dev@sha256:686404e54011e51bd2f4eb050e28ca9d560703db286c8cb6cf8efaaa0bf384bc AS base
+FROM dhi.io/debian-base:trixie-dev@sha256:4ee34308de2c7a62947a6e6a8873a26bbab6638d164449be8be4b494f908dbcb AS base
 
 LABEL org.opencontainers.image.source="https://github.com/flipstone/haskell-tools"
 
